@@ -51,43 +51,51 @@ export const submitAndNotify = action({
     const { recaptchaToken: _, ...submitArgs } = args
     const id: string = await ctx.runMutation(api.contactRequests.submit, submitArgs) as string
 
-    // 2. Send email notification
-    const endpoint = process.env.EMAIL_NOTIFICATION_ENDPOINT
-    const recipientEmail = process.env.RECIPIENT_EMAIL
-    const chatId = process.env.CHAT_ID
-    const appName = process.env.APP_NAME
-    const secretKey = process.env.SECRET_KEY
+    // 2. Send email notification via Resend
+    const resendApiKey = process.env.RESEND_API_KEY
+    const recipientEmail = process.env.RECIPIENT_EMAIL ?? "ondrej.benada@ledshopik.cz"
 
-    if (!endpoint || !recipientEmail || !chatId || !appName || !secretKey) {
-      console.log("[ContactRequest] Email env vars missing, skipping notification")
+    if (!resendApiKey) {
+      console.log("[ContactRequest] RESEND_API_KEY missing, skipping notification")
       return id
     }
 
     const sourceLabel = args.source === "velkoobchod" ? "Velkoobchod (B2B)" : args.source
-    const messageBody = [
-      `Nová poptávka z webu BE-LIGHT`,
-      ``,
-      `Zdroj: ${sourceLabel}`,
-      `Jméno: ${args.name}`,
-      `Email: ${args.email}`,
-      args.phone ? `Telefon: ${args.phone}` : null,
-      args.city ? `Město: ${args.city}` : null,
-      args.message ? `\nZpráva:\n${args.message}` : null,
-    ]
-      .filter(Boolean)
-      .join("\n")
+    const rows = [
+      ["Zdroj", sourceLabel],
+      ["Jméno", args.name],
+      ["Email", args.email],
+      args.phone ? ["Telefon", args.phone] : null,
+      args.city ? ["Město", args.city] : null,
+    ].filter(Boolean) as [string, string][]
+
+    const tableRows = rows.map(([label, value]) =>
+      `<tr><td style="padding:6px 12px;color:#666;width:100px;">${label}</td><td style="padding:6px 12px;font-weight:500;">${value}</td></tr>`
+    ).join("")
+
+    const messageHtml = args.message
+      ? `<p style="margin-top:16px;padding:12px;background:#f9f9f9;border-radius:6px;white-space:pre-wrap;">${args.message}</p>`
+      : ""
 
     try {
-      const res = await fetch(endpoint, {
+      const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${resendApiKey}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          toEmail: recipientEmail,
-          subject: `[BE-LIGHT] Nová poptávka – ${sourceLabel} – ${args.name}`,
-          message: messageBody,
-          chatId,
-          appName,
-          secretKey,
+          from: "BE-LIGHT Web <noreply@belight.cz>",
+          to: recipientEmail,
+          subject: `[BE-LIGHT] Nová poptávka — ${sourceLabel} — ${args.name}`,
+          html: `
+            <div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px;">
+              <h2 style="color:#1a1a1a;margin-bottom:4px;">Nová poptávka z webu</h2>
+              <p style="color:#999;margin-bottom:24px;font-size:13px;">BE-LIGHT — belight.cz</p>
+              <table style="width:100%;border-collapse:collapse;">${tableRows}</table>
+              ${messageHtml}
+            </div>
+          `,
         }),
       })
       if (!res.ok) {
