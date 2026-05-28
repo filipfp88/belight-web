@@ -1,0 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 96%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 96%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 38 91% 55%;
+    --primary-foreground: 220 30% 8%;
+    --secondary: 220 20% 10%;
+    --secondary-foreground: 0 0% 80%;
+    --muted: 220 20% 12%;
+    --muted-foreground: 0 0% 55%;
+    --accent: 38 91% 55%;
+    --accent-foreground: 220 30% 8%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 15% 14%;
+    --input: 220 15% 14%;
+    --ring: 38 91% 55%;
+    --radius: 0.25rem;
+
+    /* BE-LIGHT brand tokens — sjednoceno s ledshopik.cz */
+    --belight-gold: 38 91% 55%;        /* = #F5A623, stejná jako ledshopik akcent */
+    --belight-gold-bright: 40 85% 62%; /* Jasnější zlatá pro nadpisy na tmavém pozadí */
+    --belight-gold-soft: 38 70% 45%;
+    --belight-navy: 216 55% 13%;       /* = #0D1829, stejná rodina jako ledshopik nav #0D2137 */
+    --belight-dark: 220 25% 5%;        /* velmi tmavá námořní místo čisté černé */
+    --belight-surface: 220 22% 8%;
+    --belight-surface-2: 220 20% 10%;
+    --belight-text: 0 0% 92%;
+    --belight-muted: 0 0% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    background-color: #080c12;
+    color: #ebebeb;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Jost', sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #080c12;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(38 91% 55% / 0.5);
+}
+
+/* Animations */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 1.2s ease forwards;
+}
+
+.animate-slide-left {
+  animation: slideInLeft 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.delay-200 { animation-delay: 0.2s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-600 { animation-delay: 0.6s; }
+.delay-800 { animation-delay: 0.8s; }
+
+.opacity-0-init {
+  opacity: 0;
+}
+
+/* Gold line separator */
+.gold-line {
+  display: inline-block;
+  width: 40px;
+  height: 1px;
+  background: hsl(38 91% 55%);
+  vertical-align: middle;
+  margin-right: 12px;
+}
+
+/* Image overlay effect */
+.project-card img {
+  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.project-card:hover img {
+  transform: scale(1.06);
+}
+
+/* Hide Next.js badge and error messages */
+body nextjs-portal {
+  display: none;
+}

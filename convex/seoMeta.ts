@@ -1,0 +1,202 @@
+import { query, mutation, internalMutation } from "./_generated/server"
+import { v } from "convex/values"
+import { getAuthUserId } from "@convex-dev/auth/server"
+
+const seoFields = {
+  _id: v.id("seoMeta"),
+  _creationTime: v.number(),
+  path: v.string(),
+  title: v.string(),
+  description: v.string(),
+  ogImage: v.optional(v.string()),
+}
+
+export const list = query({
+  args: {},
+  returns: v.array(v.object(seoFields)),
+  handler: async (ctx) => {
+    return await ctx.db.query("seoMeta").collect()
+  },
+})
+
+export const getByPath = query({
+  args: { path: v.string() },
+  returns: v.union(v.object(seoFields), v.null()),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("seoMeta")
+      .withIndex("by_path", (q) => q.eq("path", args.path))
+      .unique()
+  },
+})
+
+export const upsert = mutation({
+  args: {
+    path: v.string(),
+    title: v.string(),
+    description: v.string(),
+    ogImage: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error("Neautorizován")
+
+    const existing = await ctx.db
+      .query("seoMeta")
+      .withIndex("by_path", (q) => q.eq("path", args.path))
+      .unique()
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        title: args.title,
+        description: args.description,
+        ogImage: args.ogImage,
+      })
+    } else {
+      await ctx.db.insert("seoMeta", args)
+    }
+    return null
+  },
+})
+
+// One-time seed: inserts all metadata.json defaults if not already in DB
+export const seedDefaults = internalMutation({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    const seeds = [
+      {
+        path: "/",
+        title: "BE-LIGHT | LED osvětlení na míru – Zakázková výroba | Brno & Ostrava",
+        description: "BE-LIGHT – prémiové LED osvětlení na míru pro komerční i rezidenční projekty v ČR a SR. Zakázková výroba, komplexní realizace, distributor KLUŚ. Showroomy v Brně a Ostravě.",
+        ogImage: "https://assets.macaly-user-data.dev/kbaegiqnmw77ctj81yv44r1j/yoynr8mzgtw8xuliw7ld87lf/E-7Qy0LUe6vBsxbReP9FW/generated-CSaz9zM5.jpeg",
+      },
+      {
+        path: "/realizace",
+        title: "Realizace LED osvětlení – reference projektů | BE-LIGHT",
+        description: "Prohlédněte si naše realizace LED osvětlení na míru. Hotely, restaurace, barbershopy, showroomy, rodinné domy a exteriéry. Prémiové projekty po celé ČR a SR.",
+        ogImage: "https://assets.macaly-user-data.dev/kbaegiqnmw77ctj81yv44r1j/yoynr8mzgtw8xuliw7ld87lf/E-7Qy0LUe6vBsxbReP9FW/generated-CSaz9zM5.jpeg",
+      },
+      {
+        path: "/realizace/barcelo-hotel",
+        title: "Barcelo Hotel ***** – LED osvětlení haly, wellness & pokojů | BE-LIGHT",
+        description: "Dlouhodobá spolupráce s pětihvězdičkovým hotelem Barcelo. Výměna osvětlení vstupní haly, konferenčních sálů, fitness, wellness i hotelových pokojů. LED pásky a ALU profily KLUŚ, nepřímé osvětlení na míru.",
+        ogImage: "https://assets.macaly-user-data.dev/cdn-cgi/image/format=webp,width=2000,height=2000,fit=scale-down,quality=85,anim=false/kbaegiqnmw77ctj81yv44r1j/yoynr8mzgtw8xuliw7ld87lf/4TEgdfM8BbsTh0gqBlPO5.jpeg",
+      },
+      {
+        path: "/realizace/barbershop-profil-ostrava",
+        title: "Barbershop PROFIL Ostrava – CCT LED osvětlení na míru | BE-LIGHT",
+        description: "Realizace LED osvětlení barbershopu PROFIL na ulici Janáčkova v Ostravě. Lineární profil JAZ s mléčným difuzorem, CCT LED pásky s plynnou změnou teploty chromatičnosti, Mi-Light ovládání. Světlo, které opravdu pomáhá.",
+        ogImage: "https://assets.macaly-user-data.dev/cdn-cgi/image/format=webp,width=2000,height=2000,fit=scale-down,quality=85,anim=false/kbaegiqnmw77ctj81yv44r1j/yoynr8mzgtw8xuliw7ld87lf/qDfpEe6YWNXRk6o9ILA71.jpeg",
+      },
+      {
+        path: "/realizace/charakter-praha",
+        title: "Barbershop CHARAKTER Praha – RGB LED osvětlení | BE-LIGHT",
+        description: "Realizace prémiového LED osvětlení barbershopu CHARAKTER v Praze. Super výkonné pásky 160 lm/W, RGB+CCT profil LIPOD, ovládání Mi-LIGHT. Maximální spolehlivost a efekt.",
+        ogImage: "https://assets.macaly-user-data.dev/cdn-cgi/image/format=webp,width=2000,height=2000,fit=scale-down,quality=85,anim=false/kbaegiqnmw77ctj81yv44r1j/yoynr8mzgtw8xuliw7ld87lf/-VFRn-b8TuXAhxs-PopXE.jpg",
+      },
+      {
+        path: "/realizace/gesipa-brno",
+        title: "GESIPA Brno – Výměna průmyslového osvětlení za LED | BE-LIGHT",
+        description: "Kompletní rekonstrukce osvětlení kanceláří a skladů GESIPA Brno. LED panely 40W Samsung, HIGH BAY 100W Meanwell, návratnost investice 6,5 měsíce, roční úspora 136 000 Kč.",
+        ogImage: "https://assets.macaly-user-data.dev/cdn-cgi/image/format=webp,width=2000,height=2000,fit=scale-down,quality=85,anim=false/kbaegiqnmw77ctj81yv44r1j/yoynr8mzgtw8xuliw7ld87lf/v3_alGdCZV_W4sxXsDCPg.jpeg",
+      },
+      {
+        path: "/realizace/anybody-hotel-brno",
+        title: "Anybody Hotel Brno – LED RGB osvětlení pokojů | BE-LIGHT",
+        description: "Realizace LED osvětlení zážitkového hotelu Anybody v Brně. RGB+CCT 5v1 pásky, ZIGBEE ovládání přes tablet, profily KLUŚ GIZA v koupelnách. Každý pokoj je inspirován jiným filmem.",
+        ogImage: "https://assets.macaly-user-data.dev/cdn-cgi/image/format=webp,width=2000,height=2000,fit=scale-down,quality=85,anim=false/kbaegiqnmw77ctj81yv44r1j/yoynr8mzgtw8xuliw7ld87lf/QnH2irNqHnhGu8vMQCbeG.jpg",
+      },
+      {
+        path: "/realizace/slast-bar",
+        title: "Slast Bar – AMBER LED osvětlení dýmkového baru | BE-LIGHT",
+        description: "Realizace osvětlení stylového dýmkového baru Slast. AMBER LED pásky bez modré složky světla pro maximální relaxaci, RGB vstupní štít, bezdrátové Mi-Light ovládání přes mobil.",
+        ogImage: "https://assets.macaly-user-data.dev/cdn-cgi/image/format=webp,width=2000,height=2000,fit=scale-down,quality=85,anim=false/kbaegiqnmw77ctj81yv44r1j/yoynr8mzgtw8xuliw7ld87lf/bzJkDiftlqzWGJFcWFmU.jpg",
+      },
+      {
+        path: "/realizace/rd-slapanice",
+        title: "RD Šlapanice u Brna – LED osvětlení rodinného domu na míru | BE-LIGHT",
+        description: "Kompletní LED osvětlení rodinného domu v Šlapanicích. Profily KLUS KOZEL v SDK stropech, RGBW panely v dětských pokojích, Mi-Light ovládání přes mobil. Volná ruka, krásný výsledek.",
+        ogImage: "https://assets.macaly-user-data.dev/cdn-cgi/image/format=webp,width=2000,height=2000,fit=scale-down,quality=85,anim=false/kbaegiqnmw77ctj81yv44r1j/yoynr8mzgtw8xuliw7ld87lf/wZ78eIsXiVVE95nnnrm7n.jpeg",
+      },
+      {
+        path: "/realizace/restaurace-jakoby-brno",
+        title: "Restaurace JAKOBY Brno – rekonstrukce nepřímého LED osvětlení | BE-LIGHT",
+        description: "Kompletní rekonstrukce LED osvětlení restaurace JAKOBY na Jakubském náměstí v Brně. LED pásky 12 W/m teplá bílá 2700K, podsvícení lavic a baru, dekorační nasvětlení. Správně napoprvé.",
+        ogImage: "https://assets.macaly-user-data.dev/cdn-cgi/image/format=webp,width=2000,height=2000,fit=scale-down,quality=85,anim=false/kbaegiqnmw77ctj81yv44r1j/yoynr8mzgtw8xuliw7ld87lf/q8w5NAVUhI6hjsnhYqJ7W.jpg",
+      },
+      {
+        path: "/realizace/bisaku-bratislava",
+        title: "Klenotnictví BISAKU Bratislava – LED osvětlení vitrín a loga | BE-LIGHT",
+        description: "Realizace LED osvětlení luxusního klenotnictví BISAKU v Bratislavě. 20W LED pásky EPISTAR CRI90+ 4000K pro vitríny, S-TYPE pásek pro logo, Mi-Light panely pro prodejní plochu.",
+        ogImage: "https://assets.macaly-user-data.dev/cdn-cgi/image/format=webp,width=2000,height=2000,fit=scale-down,quality=85,anim=false/kbaegiqnmw77ctj81yv44r1j/yoynr8mzgtw8xuliw7ld87lf/vImWZHtoHa4X7dPSs49eP.jpg",
+      },
+      {
+        path: "/realizace/restaurace-akat-brno",
+        title: "Restaurace Akát Brno – stovky metrů LED pásků s Mi-Light | BE-LIGHT",
+        description: "Realizace LED osvětlení restaurace Akát v Brně. Stovky metrů LED pásků 9,6 W/m v teplé bílé, nepřímé osvětlení, bezdrátové ovládání systémem Mi-Light. Volná ruka od majitele.",
+        ogImage: "https://assets.macaly-user-data.dev/cdn-cgi/image/format=webp,width=2000,height=2000,fit=scale-down,quality=85,anim=false/kbaegiqnmw77ctj81yv44r1j/yoynr8mzgtw8xuliw7ld87lf/MKQ1tbfiCTHI0cFWia4TR.jpg",
+      },
+      {
+        path: "/realizace/barber-striharna-brno",
+        title: "Barber Stříhárna Brno – závěsné LED profily KLUŚ LIPOD & GIZA | BE-LIGHT",
+        description: "Realizace LED osvětlení barbershopu v Brně. Závěsné profily KLUŚ LIPOD se dvěma řadami EPISTAR 2835 14,4W/m, profily KLUŚ GIZA kolem zrcadel, denní bílá 4000K, stmívání Mi-Light.",
+        ogImage: "https://assets.macaly-user-data.dev/cdn-cgi/image/format=webp,width=2000,height=2000,fit=scale-down,quality=85,anim=false/kbaegiqnmw77ctj81yv44r1j/yoynr8mzgtw8xuliw7ld87lf/tUlfNyTQR7IoAnbCfZgVI.jpg",
+      },
+      {
+        path: "/realizace/pivnice-sborovna-brno",
+        title: "Pivnice Sborovna Brno – kompletní LED osvětlení 4000K | BE-LIGHT",
+        description: "Realizace kompletního LED osvětlení pivnice Sborovna v Brně. Kombinace přímého a nepřímého osvětlení, neutrální bílá 4000K, vzdušné světelné scény pro útulnou atmosféru.",
+        ogImage: "https://assets.macaly-user-data.dev/cdn-cgi/image/format=webp,width=2000,height=2000,fit=scale-down,quality=85,anim=false/kbaegiqnmw77ctj81yv44r1j/yoynr8mzgtw8xuliw7ld87lf/S3a1WvxkekPyhFpRAopEh.jpg",
+      },
+      {
+        path: "/realizace/zahradni-osvetleni-jezirkem-brno",
+        title: "Zahradní osvětlení s jezírkem Brno – zakázkové RGB LED neony | BE-LIGHT",
+        description: "Komplexní zahradní RGB osvětlení privátní vily v Brně. Jezírko a hot tub s LED neony IP68, skalní nasvícení, RGBW terasa, sauna. Zakázkové LED neony vyráběné přímo v BE-LIGHT. Bezdrátové ovládání Mi-Light.",
+        ogImage: "https://assets.macaly-user-data.dev/cdn-cgi/image/format=webp,width=2000,height=2000,fit=scale-down,quality=85,anim=false/kbaegiqnmw77ctj81yv44r1j/yoynr8mzgtw8xuliw7ld87lf/JHdsbig9y4ycezFQS6n77.jpeg",
+      },
+      {
+        path: "/realizace/omega-brno",
+        title: "Obchodní dům Omega Brno – synchronizace 37 oken RGB LED | BE-LIGHT",
+        description: "Exteriérová realizace LED osvětlení obchodního domu Omega na náměstí Svobody v Brně. Synchronizace 37 oken do RGB barev systémem Mi-Light 5v1, RGB pásky EPISTAR v Micro Kluś profilech.",
+        ogImage: "https://assets.macaly-user-data.dev/cdn-cgi/image/format=webp,width=2000,height=2000,fit=scale-down,quality=85,anim=false/kbaegiqnmw77ctj81yv44r1j/yoynr8mzgtw8xuliw7ld87lf/H6JFg4bD8q2ceoxYJ7BxU.jpg",
+      },
+      {
+        path: "/realizace/zahradni-osvetleni-biotop",
+        title: "Exteriérové osvětlení zahrady s biotopem – LED pásky IP68 | BE-LIGHT",
+        description: "Realizace osvětlení soukromé zahrady s přírodním koupacím biotopem. Voděodolné LED pásky IP68 kolem jezírka, podsvícení dřevěných teras a schodů zahradní sauny. Teplé bílé 2700K, bezdrátové ovládání.",
+        ogImage: "https://assets.macaly-user-data.dev/cdn-cgi/image/format=webp,width=2000,height=2000,fit=scale-down,quality=85,anim=false/kbaegiqnmw77ctj81yv44r1j/yoynr8mzgtw8xuliw7ld87lf/F4wT_mwmTfElXEKmBkCfz.JPG",
+      },
+      {
+        path: "/realizace/privatni-sauna",
+        title: "Privátní sauna – RGB LED osvětlení exteriéru i interiéru | BE-LIGHT",
+        description: "Realizace LED osvětlení privátní sauny. RGB pásky IP67 pro interiér sauny, modré a červené exteriérové osvětlení terasy a fasády, bezdrátové ovládání přes mobil. Relaxace v pravém světle.",
+        ogImage: "https://assets.macaly-user-data.dev/cdn-cgi/image/format=webp,width=2000,height=2000,fit=scale-down,quality=85,anim=false/kbaegiqnmw77ctj81yv44r1j/yoynr8mzgtw8xuliw7ld87lf/2CVPudqn93T2bbDSEUs5k.jpeg",
+      },
+    ]
+
+    for (const seed of seeds) {
+      const existing = await ctx.db
+        .query("seoMeta")
+        .withIndex("by_path", (q) => q.eq("path", seed.path))
+        .unique()
+      if (!existing) {
+        await ctx.db.insert("seoMeta", seed)
+        console.log(`Seeded SEO meta for: ${seed.path}`)
+      }
+    }
+    return null
+  },
+})
+
+export const remove = mutation({
+  args: { id: v.id("seoMeta") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error("Neautorizován")
+    await ctx.db.delete(args.id)
+    return null
+  },
+})
