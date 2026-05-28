@@ -30,10 +30,26 @@ export const submitAndNotify = action({
     city: v.optional(v.string()),
     message: v.optional(v.string()),
     source: v.string(),
+    recaptchaToken: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<string> => {
-    // 1. Save to database
-    const id: string = await ctx.runMutation(api.contactRequests.submit, args) as string
+    // 1. Ověření reCAPTCHA tokenu
+    const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY
+    if (recaptchaSecret && args.recaptchaToken) {
+      const verifyRes = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `secret=${recaptchaSecret}&response=${args.recaptchaToken}`,
+      })
+      const verifyData = await verifyRes.json()
+      if (!verifyData.success || verifyData.score < 0.5) {
+        throw new Error("reCAPTCHA ověření selhalo")
+      }
+    }
+
+    // 2. Save to database
+    const { recaptchaToken: _, ...submitArgs } = args
+    const id: string = await ctx.runMutation(api.contactRequests.submit, submitArgs) as string
 
     // 2. Send email notification
     const endpoint = process.env.EMAIL_NOTIFICATION_ENDPOINT
