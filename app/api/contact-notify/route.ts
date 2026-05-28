@@ -29,7 +29,21 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, email, phone, city, message, source } = body;
+    const { name, email, phone, city, message, source, recaptchaToken } = body;
+
+    // Ověření reCAPTCHA tokenu
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+    if (secretKey && recaptchaToken) {
+      const verifyRes = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `secret=${secretKey}&response=${recaptchaToken}`,
+      });
+      const verifyData = await verifyRes.json();
+      if (!verifyData.success || verifyData.score < 0.5) {
+        return NextResponse.json({ error: "Ověření selhalo, zkuste to znovu." }, { status: 400 });
+      }
+    }
 
     if (!name || !email || !source) {
       return NextResponse.json({ error: "Chybí povinná pole" }, { status: 400 });

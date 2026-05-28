@@ -6,6 +6,7 @@ import Script from "next/script";
 import { Providers } from "./providers";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-VGYLMDYVME";
+const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? "6LfXdQAtAAAAAHYKMXrOXwzCY0FjOfWb77ULBlnn";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-display",
@@ -39,6 +40,10 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <Providers>{children}</Providers>
+        <Script
+          src={`https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`}
+          strategy="afterInteractive"
+        />
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
           strategy="afterInteractive"

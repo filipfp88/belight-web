@@ -127,6 +127,11 @@ export default function VelkoobchodPageContent() {
 
     setFormState("sending");
     try {
+      const recaptchaToken = await new Promise<string>((resolve) => {
+        const gr = (window as any).grecaptcha;
+        gr.ready(async () => resolve(await gr.execute("6LfXdQAtAAAAAHYKMXrOXwzCY0FjOfWb77ULBlnn", { action: "contact" })));
+      }).catch(() => "");
+
       await submitContact({
         name: formData.name,
         email: formData.email,
@@ -147,6 +152,7 @@ export default function VelkoobchodPageContent() {
           city: formData.city || undefined,
           message: formData.message || undefined,
           source: "velkoobchod",
+          recaptchaToken,
         }),
       }).catch(() => {});
 

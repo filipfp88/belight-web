@@ -287,10 +287,13 @@ export default function BelightPage() {
     if (!contactForm.name || !contactForm.email || !contactForm.consent) return;
     setContactStatus("sending");
     try {
+      const recaptchaToken = await new Promise<string>((resolve) => {
+        const gr = (window as any).grecaptcha;
+        gr.ready(async () => resolve(await gr.execute("6LfXdQAtAAAAAHYKMXrOXwzCY0FjOfWb77ULBlnn", { action: "contact" })));
+      }).catch(() => "");
       await submitContact({ name: contactForm.name, email: contactForm.email, phone: contactForm.phone || undefined, message: contactForm.message || undefined, source: "homepage" });
-      fetch("/api/contact-notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: contactForm.name, email: contactForm.email, phone: contactForm.phone || undefined, message: contactForm.message || undefined, source: "homepage" }) }).catch(() => {});
+      fetch("/api/contact-notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: contactForm.name, email: contactForm.email, phone: contactForm.phone || undefined, message: contactForm.message || undefined, source: "homepage", recaptchaToken }) }).catch(() => {});
       setContactStatus("sent");
-      console.log("[BE-LIGHT] Contact form submitted");
     } catch (err) {
       console.log("[BE-LIGHT] Contact form error:", err);
       setContactStatus("error");
