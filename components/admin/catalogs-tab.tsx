@@ -1,9 +1,9 @@
 "use client"
 
-import { useQuery, useMutation } from "convex/react"
+import { useQuery, useMutation, useConvex } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Id } from "@/convex/_generated/dataModel"
-import { useState } from "react"
+import { useState, useRef } from "react"
 
 type Catalog = {
   _id: Id<"catalogs">
@@ -48,18 +48,79 @@ const defaultForm: FormState = {
 const inputCls = "w-full bg-[#0a0a0a] border border-white/10 rounded px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#C9A84C]/50"
 const labelCls = "block text-xs text-white/50 mb-1"
 
+function UploadButton({
+  accept,
+  label,
+  uploading,
+  onFile,
+}: {
+  accept: string
+  label: string
+  uploading: boolean
+  onFile: (file: File) => void
+}) {
+  const ref = useRef<HTMLInputElement>(null)
+  return (
+    <>
+      <input
+        ref={ref}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file) onFile(file)
+          e.target.value = ""
+        }}
+      />
+      <button
+        type="button"
+        onClick={() => ref.current?.click()}
+        disabled={uploading}
+        className="px-3 py-1.5 text-xs bg-white/10 text-white/70 hover:bg-white/20 rounded transition-colors disabled:opacity-50 whitespace-nowrap"
+      >
+        {uploading ? "Nahrávám..." : label}
+      </button>
+    </>
+  )
+}
+
 export default function CatalogsTab() {
   const catalogs = useQuery(api.catalogs.list)
   const seedCatalogs = useMutation(api.catalogs.seed)
   const createCatalog = useMutation(api.catalogs.create)
   const updateCatalog = useMutation(api.catalogs.update)
   const removeCatalog = useMutation(api.catalogs.remove)
+  const generateUploadUrl = useMutation(api.files.generateUploadUrl)
+  const convex = useConvex()
 
   const [editing, setEditing] = useState<Catalog | null>(null)
   const [creating, setCreating] = useState(false)
   const [form, setForm] = useState<FormState>(defaultForm)
   const [saving, setSaving] = useState(false)
   const [seeding, setSeeding] = useState(false)
+  const [uploading, setUploading] = useState<"pdf" | "cover" | null>(null)
+
+  const uploadFile = async (file: File, field: "pdfUrl" | "coverUrl") => {
+    const key = field === "pdfUrl" ? "pdf" : "cover"
+    setUploading(key)
+    try {
+      const uploadUrl = await generateUploadUrl()
+      const res = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      })
+      if (!res.ok) throw new Error("Upload selhal")
+      const { storageId } = await res.json()
+      const url = await convex.query(api.files.getUrl, { storageId })
+      if (url) setForm((f) => ({ ...f, [field]: url }))
+    } catch {
+      alert("Nahrávání se nezdařilo, zkuste to znovu.")
+    } finally {
+      setUploading(null)
+    }
+  }
 
   const openCreate = () => {
     setForm({ ...defaultForm, sortOrder: String((catalogs?.length ?? 0)) })
@@ -91,7 +152,7 @@ export default function CatalogsTab() {
 
   const handleSave = async () => {
     if (!form.title.trim() || !form.pdfUrl.trim() || !form.coverUrl.trim()) {
-      alert("Název, URL PDF a URL obálky jsou povinné.")
+      alert("Název, PDF a obálka jsou povinné.")
       return
     }
     setSaving(true)
@@ -127,11 +188,7 @@ export default function CatalogsTab() {
 
   const handleSeed = async () => {
     setSeeding(true)
-    try {
-      await seedCatalogs()
-    } finally {
-      setSeeding(false)
-    }
+    try { await seedCatalogs() } finally { setSeeding(false) }
   }
 
   const showForm = creating || editing !== null
@@ -141,7 +198,7 @@ export default function CatalogsTab() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-medium text-white">Katalogy</h2>
-          <p className="text-sm text-white/40 mt-1">Správa PDF katalogů ke stažení na stránce /katalogy</p>
+          <p className="text-sm text-white/40 mt-1">Správa PDF katalogů ke stažení</p>
         </div>
         <div className="flex gap-3">
           {catalogs?.length === 0 && (
@@ -236,13 +293,34 @@ export default function CatalogsTab() {
             </div>
 
             <div>
-              <label className={labelCls}>URL PDF souboru * <span className="text-white/25">(z Macaly Assets)</span></label>
-              <input className={inputCls} value={form.pdfUrl} onChange={(e) => setForm({ ...form, pdfUrl: e.target.value })} placeholder="https://assets.macaly-user-data.dev/..." />
+              <label className={labelCls}>PDF soubor *</label>
+              <div className="flex gap-2 items-center">
+                <input className={inputCls} value={form.pdfUrl} onChange={(e) => setForm({ ...form, pdfUrl: e.target.value })} placeholder="URL nebo nahrajte soubor →" />
+                <UploadButton
+                  accept=".pdf,application/pdf"
+                  label="Nahrát PDF"
+                  uploading={uploading === "pdf"}
+                  onFile={(f) => uploadFile(f, "pdfUrl")}
+                />
+              </div>
+              {form.pdfUrl && (
+                <a href={form.pdfUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#C9A84C]/70 hover:text-[#C9A84C] mt-1 inline-block truncate max-w-full">
+                  ↗ Otevřít PDF
+                </a>
+              )}
             </div>
 
             <div>
-              <label className={labelCls}>URL obálky (náhledový obrázek) * <span className="text-white/25">(z Macaly Assets)</span></label>
-              <input className={inputCls} value={form.coverUrl} onChange={(e) => setForm({ ...form, coverUrl: e.target.value })} placeholder="https://assets.macaly-user-data.dev/..." />
+              <label className={labelCls}>Obálka (náhledový obrázek) *</label>
+              <div className="flex gap-2 items-center">
+                <input className={inputCls} value={form.coverUrl} onChange={(e) => setForm({ ...form, coverUrl: e.target.value })} placeholder="URL nebo nahrajte obrázek →" />
+                <UploadButton
+                  accept="image/*"
+                  label="Nahrát obálku"
+                  uploading={uploading === "cover"}
+                  onFile={(f) => uploadFile(f, "coverUrl")}
+                />
+              </div>
               {form.coverUrl && (
                 <img src={form.coverUrl} alt="náhled" className="mt-2 h-20 object-cover rounded border border-white/10" />
               )}
@@ -281,7 +359,7 @@ export default function CatalogsTab() {
             <div className="flex gap-3 pt-2">
               <button
                 onClick={handleSave}
-                disabled={saving}
+                disabled={saving || uploading !== null}
                 className="flex-1 py-2 bg-[#C9A84C] text-[#0a0a0a] text-sm font-medium rounded hover:bg-[#d4b568] transition-colors disabled:opacity-50"
               >
                 {saving ? "Ukládám..." : "Uložit"}
