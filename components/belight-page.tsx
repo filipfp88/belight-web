@@ -344,7 +344,7 @@ export default function BelightPage() {
     );
     els.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, [showrooms.length, sliderPairs.length]);
+  }, [showrooms.length, sliderPairs.length, (dbProjects ?? []).length]);
 
   // Dynamic social links (icons stay, hrefs come from settings if saved)
   const socialLinks = SOCIAL_LINKS.map((s) => ({
