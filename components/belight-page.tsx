@@ -5,7 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 
 import BeforeAfterSlider from "@/components/before-after-slider";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, usePreloadedQuery } from "convex/react";
+import { Preloaded } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
 const BEFORE_AFTER_PAIRS = [
@@ -196,7 +197,7 @@ const SCHEMA_ORG = {
   ],
 };
 
-export default function BelightPage() {
+export default function BelightPage({ preloadedProjects }: { preloadedProjects: Preloaded<typeof api.projects.listPublished> }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [heroSlide, setHeroSlide] = useState(0);
@@ -270,7 +271,7 @@ export default function BelightPage() {
   }, [lightbox]);
 
   // ── Convex data ──────────────────────────────────────────────────────────
-  const dbProjects = useQuery(api.projects.listPublished);
+  const dbProjects = usePreloadedQuery(preloadedProjects);
   const dbShowrooms = useQuery(api.showrooms.listPublished);
   const dbSliderPairs = useQuery(api.sliderPairs.listPublished);
   const settingsList = useQuery(api.settings.list);

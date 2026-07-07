@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { fetchQuery } from "convex/nextjs"
+import { fetchQuery, preloadQuery } from "convex/nextjs"
 import { api } from "@/convex/_generated/api"
 import BelightPage from "@/components/belight-page"
 import siteMetadata from "@/app/metadata.json"
@@ -37,6 +37,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default function Home() {
-  return <BelightPage />
+export default async function Home() {
+  const preloadedProjects = await preloadQuery(api.projects.listPublished, {})
+  return <BelightPage preloadedProjects={preloadedProjects} />
 }
