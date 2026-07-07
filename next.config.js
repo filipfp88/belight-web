@@ -62,7 +62,15 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  images: { unoptimized: true },
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "assets.macaly-user-data.dev" },
+      { protocol: "https", hostname: "**.convex.cloud" },
+      { protocol: "https", hostname: "images.pexels.com" },
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "cdn.pixabay.com" },
+    ],
+  },
   devIndicators: false,
   allowedDevOrigins: [
     "*.macaly.dev",

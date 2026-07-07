@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 import BeforeAfterSlider from "@/components/before-after-slider";
 import { useQuery, useMutation } from "convex/react";
@@ -682,11 +683,12 @@ export default function BelightPage() {
                 } ${i === 3 ? "lg:col-span-2" : ""}`}
               >
                 <div className={`relative overflow-hidden ${i === 3 ? "aspect-[21/9]" : "aspect-[4/3]"}`}>
-                  <img
+                  <Image
                     src={project.images[0]}
                     alt={project.title}
-                    className="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-105 group-hover:brightness-[1.15]"
-                    loading="lazy"
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-cover transition-all duration-700 ease-out group-hover:scale-105 group-hover:brightness-[1.15]"
                   />
                   {/* Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0f1623]/90 via-transparent to-transparent" />
