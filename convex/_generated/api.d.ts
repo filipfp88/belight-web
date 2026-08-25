@@ -13,6 +13,7 @@ import type * as adminWhitelist from "../adminWhitelist.js";
 import type * as auth from "../auth.js";
 import type * as catalogs from "../catalogs.js";
 import type * as contactRequests from "../contactRequests.js";
+import type * as files from "../files.js";
 import type * as http from "../http.js";
 import type * as media from "../media.js";
 import type * as projects from "../projects.js";
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   catalogs: typeof catalogs;
   contactRequests: typeof contactRequests;
+  files: typeof files;
   http: typeof http;
   media: typeof media;
   projects: typeof projects;

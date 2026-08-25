@@ -101,6 +101,7 @@ export default defineSchema({
     city: v.optional(v.string()),
     message: v.optional(v.string()),
     source: v.string(),
+    attachmentUrl: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_created", ["createdAt"]),
 })

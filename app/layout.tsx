@@ -26,6 +26,9 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "BE-LIGHT | Prémiové LED osvětlení na míru",
   description: "BE-LIGHT – prémiové LED osvětlení na míru pro komerční i rezidenční projekty.",
+  openGraph: {
+    images: [{ url: "/og-image.jpg", width: 1200, height: 630 }],
+  },
 };
 
 export default function RootLayout({
@@ -40,10 +43,30 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <Providers>{children}</Providers>
+
+        {/* CookieYes – musí být před GA4 */}
         <Script
-          src={`https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`}
-          strategy="afterInteractive"
+          id="cookieyes"
+          src="https://cdn-cookieyes.com/client_data/980726724dadd60e048913ef0aba1a67/script.js"
+          strategy="beforeInteractive"
         />
+
+        {/* Google Consent Mode v2 – výchozí stav: vše zamítnuto */}
+        <Script id="consent-defaults" strategy="beforeInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('consent', 'default', {
+              'ad_storage': 'denied',
+              'ad_user_data': 'denied',
+              'ad_personalization': 'denied',
+              'analytics_storage': 'denied',
+              'wait_for_update': 500
+            });
+          `}
+        </Script>
+
+        {/* GA4 */}
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
           strategy="afterInteractive"
@@ -56,6 +79,12 @@ export default function RootLayout({
             gtag('config', '${GA_ID}');
           `}
         </Script>
+
+        {/* reCAPTCHA */}
+        <Script
+          src={`https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`}
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );

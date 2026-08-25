@@ -29,9 +29,9 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, email, phone, city, message, source, recaptchaToken } = body as {
+    const { name, email, phone, city, message, source, recaptchaToken, attachmentUrl } = body as {
       name: string; email: string; phone?: string; city?: string;
-      message?: string; source: string; recaptchaToken?: string;
+      message?: string; source: string; recaptchaToken?: string; attachmentUrl?: string;
     };
 
     // Ověření reCAPTCHA tokenu
@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
       message: typeof message === "string" ? message.trim() : undefined,
       source,
       recaptchaToken: recaptchaToken ?? undefined,
+      attachmentUrl: typeof attachmentUrl === "string" ? attachmentUrl : undefined,
     });
 
     return NextResponse.json({ ok: true });

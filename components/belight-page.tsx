@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 
 import BeforeAfterSlider from "@/components/before-after-slider";
-import { useQuery, useMutation, usePreloadedQuery } from "convex/react";
+import { useQuery, useMutation, usePreloadedQuery, useConvex } from "convex/react";
 import { Preloaded } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
@@ -281,8 +281,11 @@ export default function BelightPage({ preloadedProjects }: { preloadedProjects: 
 
   // ── Contact form ──
   const submitContact = useMutation(api.contactRequests.submit);
+  const generateUploadUrl = useMutation(api.files.generateUploadUrl);
+  const convex = useConvex();
   const [contactForm, setContactForm] = useState({ name: "", email: "", phone: "", message: "", consent: false });
   const [contactStatus, setContactStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [contactFile, setContactFile] = useState<File | null>(null);
   const updateContact = (field: string, value: string | boolean) => setContactForm((p) => ({ ...p, [field]: value }));
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -293,8 +296,19 @@ export default function BelightPage({ preloadedProjects }: { preloadedProjects: 
         const gr = (window as any).grecaptcha;
         gr.ready(async () => resolve(await gr.execute("6LfXdQAtAAAAAHYKMXrOXwzCY0FjOfWb77ULBlnn", { action: "contact" })));
       }).catch(() => "");
-      await submitContact({ name: contactForm.name, email: contactForm.email, phone: contactForm.phone || undefined, message: contactForm.message || undefined, source: "homepage" });
-      fetch("/api/contact-notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: contactForm.name, email: contactForm.email, phone: contactForm.phone || undefined, message: contactForm.message || undefined, source: "homepage", recaptchaToken }) }).catch(() => {});
+
+      let attachmentUrl: string | undefined;
+      if (contactFile) {
+        const uploadUrl = await generateUploadUrl();
+        const res = await fetch(uploadUrl, { method: "POST", headers: { "Content-Type": contactFile.type }, body: contactFile });
+        if (res.ok) {
+          const { storageId } = await res.json();
+          attachmentUrl = await convex.query(api.files.getUrl, { storageId }) ?? undefined;
+        }
+      }
+
+      await submitContact({ name: contactForm.name, email: contactForm.email, phone: contactForm.phone || undefined, message: contactForm.message || undefined, source: "homepage", attachmentUrl });
+      fetch("/api/contact-notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: contactForm.name, email: contactForm.email, phone: contactForm.phone || undefined, message: contactForm.message || undefined, source: "homepage", recaptchaToken, attachmentUrl }) }).catch(() => {});
       setContactStatus("sent");
     } catch (err) {
       console.log("[BE-LIGHT] Contact form error:", err);
@@ -1058,6 +1072,12 @@ export default function BelightPage({ preloadedProjects }: { preloadedProjects: 
                       <label htmlFor="ct-msg" className="text-[12px] tracking-[0.15em] uppercase text-[#a0aab4] font-sans">Zpráva</label>
                       <textarea id="ct-msg" rows={3} value={contactForm.message} onChange={(e) => updateContact("message", e.target.value)}
                         className="bg-white/[0.04] border border-white/10 px-3.5 py-2.5 text-[14px] text-white outline-none focus:border-[hsl(38,91%,55%)] transition-colors font-sans resize-y" style={{ borderRadius: "2px" }} />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="ct-file" className="text-[12px] tracking-[0.15em] uppercase text-[#a0aab4] font-sans">Příloha <span className="normal-case text-[#a0aab4]/50">(PDF, obrázek, max 10 MB)</span></label>
+                      <input id="ct-file" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={(e) => setContactFile(e.target.files?.[0] ?? null)}
+                        className="text-[13px] text-white/60 font-sans file:mr-3 file:px-3 file:py-1.5 file:text-xs file:bg-white/10 file:text-white/70 file:border-0 file:rounded file:cursor-pointer hover:file:bg-white/20 cursor-pointer" />
+                      {contactFile && <p className="text-[12px] text-[hsl(38,91%,55%)]">📎 {contactFile.name}</p>}
                     </div>
                     <label className="flex items-start gap-2.5 cursor-pointer">
                       <input type="checkbox" required checked={contactForm.consent} onChange={(e) => updateContact("consent", e.target.checked)}

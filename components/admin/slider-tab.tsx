@@ -1,9 +1,22 @@
 "use client"
 
-import { useQuery, useMutation } from "convex/react"
+import { useQuery, useMutation, useConvex } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Id } from "@/convex/_generated/dataModel"
-import { useState } from "react"
+import { useState, useRef } from "react"
+
+function UploadButton({ accept, label, uploading, onFile }: { accept: string; label: string; uploading: boolean; onFile: (f: File) => void }) {
+  const ref = useRef<HTMLInputElement>(null)
+  return (
+    <>
+      <input ref={ref} type="file" accept={accept} className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = "" }} />
+      <button type="button" onClick={() => ref.current?.click()} disabled={uploading}
+        className="px-3 py-1.5 text-xs bg-white/10 text-white/70 hover:bg-white/20 rounded transition-colors disabled:opacity-50 whitespace-nowrap">
+        {uploading ? "Nahrávám..." : label}
+      </button>
+    </>
+  )
+}
 
 type SliderPair = {
   _id: Id<"sliderPairs">
@@ -51,12 +64,32 @@ export default function SliderTab() {
   const createPair = useMutation(api.sliderPairs.create)
   const updatePair = useMutation(api.sliderPairs.update)
   const removePair = useMutation(api.sliderPairs.remove)
+  const generateUploadUrl = useMutation(api.files.generateUploadUrl)
+  const convex = useConvex()
 
   const [editing, setEditing] = useState<SliderPair | null>(null)
   const [creating, setCreating] = useState(false)
   const [form, setForm] = useState<FormState>(defaultForm)
   const [saving, setSaving] = useState(false)
   const [seeding, setSeeding] = useState(false)
+  const [uploading, setUploading] = useState<"before" | "after" | null>(null)
+
+  const uploadFile = async (file: File, field: "beforeSrc" | "afterSrc") => {
+    const key = field === "beforeSrc" ? "before" : "after"
+    setUploading(key)
+    try {
+      const uploadUrl = await generateUploadUrl()
+      const res = await fetch(uploadUrl, { method: "POST", headers: { "Content-Type": file.type }, body: file })
+      if (!res.ok) throw new Error("Upload selhal")
+      const { storageId } = await res.json()
+      const url = await convex.query(api.files.getUrl, { storageId })
+      if (url) setForm((f) => ({ ...f, [field]: url }))
+    } catch {
+      alert("Nahrávání se nezdařilo, zkuste to znovu.")
+    } finally {
+      setUploading(null)
+    }
+  }
 
   const openCreate = () => {
     setForm({ ...defaultForm, sortOrder: String(pairs?.length ?? 0) })
@@ -219,19 +252,21 @@ export default function SliderTab() {
             </div>
 
             <div>
-              <label className={labelCls}>Foto PŘED (URL) *</label>
-              <input className={inputCls} value={form.beforeSrc} onChange={(e) => setForm({ ...form, beforeSrc: e.target.value })} placeholder="https://..." />
-              {form.beforeSrc && (
-                <img src={form.beforeSrc} alt="před" className="mt-2 h-20 w-full object-cover rounded border border-white/10" />
-              )}
+              <label className={labelCls}>Foto PŘED *</label>
+              <div className="flex gap-2 items-center">
+                <input className={inputCls} value={form.beforeSrc} onChange={(e) => setForm({ ...form, beforeSrc: e.target.value })} placeholder="URL nebo nahrajte →" />
+                <UploadButton accept="image/*" label="Nahrát" uploading={uploading === "before"} onFile={(f) => uploadFile(f, "beforeSrc")} />
+              </div>
+              {form.beforeSrc && <img src={form.beforeSrc} alt="před" className="mt-2 h-20 w-full object-cover rounded border border-white/10" />}
             </div>
 
             <div>
-              <label className={labelCls}>Foto PO (URL) *</label>
-              <input className={inputCls} value={form.afterSrc} onChange={(e) => setForm({ ...form, afterSrc: e.target.value })} placeholder="https://..." />
-              {form.afterSrc && (
-                <img src={form.afterSrc} alt="po" className="mt-2 h-20 w-full object-cover rounded border border-white/10" />
-              )}
+              <label className={labelCls}>Foto PO *</label>
+              <div className="flex gap-2 items-center">
+                <input className={inputCls} value={form.afterSrc} onChange={(e) => setForm({ ...form, afterSrc: e.target.value })} placeholder="URL nebo nahrajte →" />
+                <UploadButton accept="image/*" label="Nahrát" uploading={uploading === "after"} onFile={(f) => uploadFile(f, "afterSrc")} />
+              </div>
+              {form.afterSrc && <img src={form.afterSrc} alt="po" className="mt-2 h-20 w-full object-cover rounded border border-white/10" />}
             </div>
 
             <div className="grid grid-cols-2 gap-3">

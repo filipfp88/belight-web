@@ -4,7 +4,7 @@ import { api } from "@/convex/_generated/api"
 import BelightPage from "@/components/belight-page"
 import siteMetadata from "@/app/metadata.json"
 
-const BASE_URL = "https://macaly-yoynr8mzgtw8xuliw7ld87lf.macaly.app"
+const BASE_URL = "https://www.belight.cz"
 
 export async function generateMetadata(): Promise<Metadata> {
   const dbMeta = await fetchQuery(api.seoMeta.getByPath, { path: "/" }).catch(() => null)

@@ -11,6 +11,7 @@ export const submit = mutation({
     city: v.optional(v.string()),
     message: v.optional(v.string()),
     source: v.string(),
+    attachmentUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const id = await ctx.db.insert("contactRequests", {
@@ -31,6 +32,7 @@ export const submitAndNotify = action({
     message: v.optional(v.string()),
     source: v.string(),
     recaptchaToken: v.optional(v.string()),
+    attachmentUrl: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<string> => {
     // 1. Ověření reCAPTCHA tokenu
@@ -51,7 +53,7 @@ export const submitAndNotify = action({
     const { recaptchaToken: _, ...submitArgs } = args
     const id: string = await ctx.runMutation(api.contactRequests.submit, submitArgs) as string
 
-    // 2. Send email notification via Resend
+    // 3. Send email notification via Resend
     const resendApiKey = process.env.RESEND_API_KEY
     const recipientEmail = process.env.RECIPIENT_EMAIL ?? "ondrej.benada@ledshopik.cz"
 
@@ -77,6 +79,10 @@ export const submitAndNotify = action({
       ? `<p style="margin-top:16px;padding:12px;background:#f9f9f9;border-radius:6px;white-space:pre-wrap;">${args.message}</p>`
       : ""
 
+    const attachmentHtml = args.attachmentUrl
+      ? `<p style="margin-top:16px;"><a href="${args.attachmentUrl}" style="color:#C9A84C;font-weight:500;">📎 Zobrazit přílohu</a></p>`
+      : ""
+
     try {
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -94,6 +100,7 @@ export const submitAndNotify = action({
               <p style="color:#999;margin-bottom:24px;font-size:13px;">BE-LIGHT — belight.cz</p>
               <table style="width:100%;border-collapse:collapse;">${tableRows}</table>
               ${messageHtml}
+              ${attachmentHtml}
             </div>
           `,
         }),
