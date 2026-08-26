@@ -281,7 +281,7 @@ export default function BelightPage({ preloadedProjects }: { preloadedProjects: 
 
   // ── Contact form ──
   const submitContact = useMutation(api.contactRequests.submit);
-  const generateUploadUrl = useMutation(api.files.generateUploadUrl);
+  const generateUploadUrl = useMutation(api.files.generatePublicUploadUrl);
   const convex = useConvex();
   const [contactForm, setContactForm] = useState({ name: "", email: "", phone: "", message: "", consent: false });
   const [contactStatus, setContactStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
