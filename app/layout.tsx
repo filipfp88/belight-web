@@ -80,6 +80,37 @@ export default function RootLayout({
           `}
         </Script>
 
+        {/* CookieYes → GA4 Consent Mode bridge */}
+        <Script id="cy-consent-bridge" strategy="afterInteractive">
+          {`
+            function updateGaConsent(accepted) {
+              var analytics = accepted && (accepted.includes('analytics') || accepted.includes('performance'));
+              gtag('consent', 'update', {
+                'analytics_storage': analytics ? 'granted' : 'denied',
+                'ad_storage': 'denied',
+                'ad_user_data': 'denied',
+                'ad_personalization': 'denied'
+              });
+            }
+            document.addEventListener('cookieyes-consent-update', function(e) {
+              updateGaConsent(e.detail && e.detail.accepted);
+            });
+            // Při načtení stránky zkontroluj uložený souhlas
+            document.addEventListener('DOMContentLoaded', function() {
+              var cy = document.cookie.match(/cookieyes-consent=([^;]+)/);
+              if (cy) {
+                try {
+                  var val = decodeURIComponent(cy[1]);
+                  var accepted = (val.match(/accepted:([^,}]+)/) || [])[1];
+                  if (accepted && (accepted.includes('analytics') || accepted.includes('performance'))) {
+                    gtag('consent', 'update', { 'analytics_storage': 'granted' });
+                  }
+                } catch(e) {}
+              }
+            });
+          `}
+        </Script>
+
         {/* reCAPTCHA */}
         <Script
           src={`https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`}
