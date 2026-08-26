@@ -44,69 +44,49 @@ export default function RootLayout({
       >
         <Providers>{children}</Providers>
 
-        {/* CookieYes – musí být před GA4 */}
+        {/* CookieYes banner */}
         <Script
           id="cookieyes"
           src="https://cdn-cookieyes.com/client_data/980726724dadd60e048913ef0aba1a67/script.js"
-          strategy="beforeInteractive"
-        />
-
-        {/* Google Consent Mode v2 – výchozí stav: vše zamítnuto */}
-        <Script id="consent-defaults" strategy="beforeInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('consent', 'default', {
-              'ad_storage': 'denied',
-              'ad_user_data': 'denied',
-              'ad_personalization': 'denied',
-              'analytics_storage': 'denied',
-              'wait_for_update': 500
-            });
-          `}
-        </Script>
-
-        {/* GA4 */}
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
           strategy="afterInteractive"
         />
-        <Script id="ga4-init" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${GA_ID}');
-          `}
-        </Script>
 
-        {/* CookieYes → GA4 Consent Mode bridge */}
-        <Script id="cy-consent-bridge" strategy="afterInteractive">
+        {/* GA4 – načte se jen po přijetí analytics cookies */}
+        <Script id="ga4-consent-loader" strategy="afterInteractive">
           {`
-            function updateGaConsent(accepted) {
-              var analytics = accepted && (accepted.includes('analytics') || accepted.includes('performance'));
-              gtag('consent', 'update', {
-                'analytics_storage': analytics ? 'granted' : 'denied',
-                'ad_storage': 'denied',
-                'ad_user_data': 'denied',
-                'ad_personalization': 'denied'
-              });
+            var GA_ID = '${GA_ID}';
+            var ga4Loaded = false;
+
+            function loadGA4() {
+              if (ga4Loaded) return;
+              ga4Loaded = true;
+              var s = document.createElement('script');
+              s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+              s.async = true;
+              document.head.appendChild(s);
+              s.onload = function() {
+                window.dataLayer = window.dataLayer || [];
+                window.gtag = function(){ dataLayer.push(arguments); };
+                gtag('js', new Date());
+                gtag('config', GA_ID);
+              };
             }
-            document.addEventListener('cookieyes-consent-update', function(e) {
-              updateGaConsent(e.detail && e.detail.accepted);
-            });
-            // Při načtení stránky zkontroluj uložený souhlas
-            document.addEventListener('DOMContentLoaded', function() {
-              var cy = document.cookie.match(/cookieyes-consent=([^;]+)/);
-              if (cy) {
-                try {
-                  var val = decodeURIComponent(cy[1]);
-                  var accepted = (val.match(/accepted:([^,}]+)/) || [])[1];
-                  if (accepted && (accepted.includes('analytics') || accepted.includes('performance'))) {
-                    gtag('consent', 'update', { 'analytics_storage': 'granted' });
-                  }
-                } catch(e) {}
-              }
+
+            function hasAnalyticsConsent() {
+              var m = document.cookie.match(/cookieyes-consent=([^;]+)/);
+              if (!m) return false;
+              try {
+                var val = decodeURIComponent(m[1]);
+                return val.includes('analytics:yes') || val.includes('performance:yes');
+              } catch(e) { return false; }
+            }
+
+            // Zkontroluj uložený souhlas při načtení
+            if (hasAnalyticsConsent()) loadGA4();
+
+            // Reaguj na změnu souhlasu
+            document.addEventListener('cookieyes-consent-update', function() {
+              if (hasAnalyticsConsent()) loadGA4();
             });
           `}
         </Script>
