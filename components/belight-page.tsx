@@ -300,7 +300,7 @@ export default function BelightPage({ preloadedProjects }: { preloadedProjects: 
       let attachmentUrl: string | undefined;
       if (contactFile) {
         const uploadUrl = await generateUploadUrl();
-        const res = await fetch(uploadUrl, { method: "POST", headers: { "Content-Type": contactFile.type }, body: contactFile });
+        const res = await fetch(uploadUrl, { method: "POST", headers: { "Content-Type": contactFile.type || "application/octet-stream" }, body: contactFile });
         if (res.ok) {
           const { storageId } = await res.json();
           attachmentUrl = await convex.query(api.files.getUrl, { storageId }) ?? undefined;

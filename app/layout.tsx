@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   title: "BE-LIGHT | Prémiové LED osvětlení na míru",
   description: "BE-LIGHT – prémiové LED osvětlení na míru pro komerční i rezidenční projekty.",
   openGraph: {
-    images: [{ url: "/og-image.jpg", width: 1200, height: 630 }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
   },
 };
 
