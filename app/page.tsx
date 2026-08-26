@@ -11,7 +11,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const fallback = siteMetadata["/"]
   const title = dbMeta?.title ?? fallback.title
   const description = dbMeta?.description ?? fallback.description
-  const ogImage = dbMeta?.ogImage ?? fallback.openGraph.images
+  const rawOgImage = dbMeta?.ogImage ?? fallback.openGraph.images
+  const ogImage = typeof rawOgImage === "string" && rawOgImage.includes("macaly")
+    ? `${BASE_URL}/og-image.png`
+    : rawOgImage
 
   return {
     title,
