@@ -51,43 +51,17 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
 
-        {/* GA4 – načte se jen po přijetí analytics cookies */}
-        <Script id="ga4-consent-loader" strategy="afterInteractive">
+        {/* GA4 */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="ga4-init" strategy="afterInteractive">
           {`
-            var GA_ID = '${GA_ID}';
-            var ga4Loaded = false;
-
-            function loadGA4() {
-              if (ga4Loaded) return;
-              ga4Loaded = true;
-              var s = document.createElement('script');
-              s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
-              s.async = true;
-              document.head.appendChild(s);
-              s.onload = function() {
-                window.dataLayer = window.dataLayer || [];
-                window.gtag = function(){ dataLayer.push(arguments); };
-                gtag('js', new Date());
-                gtag('config', GA_ID);
-              };
-            }
-
-            function hasAnalyticsConsent() {
-              var m = document.cookie.match(/cookieyes-consent=([^;]+)/);
-              if (!m) return false;
-              try {
-                var val = decodeURIComponent(m[1]);
-                return val.includes('analytics:yes') || val.includes('performance:yes');
-              } catch(e) { return false; }
-            }
-
-            // Zkontroluj uložený souhlas při načtení
-            if (hasAnalyticsConsent()) loadGA4();
-
-            // Reaguj na změnu souhlasu
-            document.addEventListener('cookieyes-consent-update', function() {
-              if (hasAnalyticsConsent()) loadGA4();
-            });
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_ID}');
           `}
         </Script>
 
