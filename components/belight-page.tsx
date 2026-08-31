@@ -1118,21 +1118,24 @@ export default function BelightPage({ preloadedProjects }: { preloadedProjects: 
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
           {/* Main row */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-5">
-            <div className="flex flex-col items-start">
+            <a href="#" className="flex flex-col items-start group">
               <div className="flex items-end gap-1.5">
-                <span style={{fontFamily: "var(--font-display)", fontSize: "1rem", fontWeight: 400, letterSpacing: "0.06em", color: "#9ba3af", lineHeight: 1}}>BE</span>
+                <span className="font-display text-[1rem] tracking-[0.06em] font-normal text-white leading-none">BE</span>
                 <svg width="18" height="13" viewBox="0 0 32 22" fill="none" aria-hidden="true">
-                  <line x1="16" y1="2" x2="16" y2="9" stroke="hsl(38,91%,55%)" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
-                  <line x1="8"  y1="4" x2="13" y2="11" stroke="hsl(38,91%,55%)" strokeWidth="1.5" strokeLinecap="round" opacity="0.35"/>
-                  <line x1="24" y1="4" x2="19" y2="11" stroke="hsl(38,91%,55%)" strokeWidth="1.5" strokeLinecap="round" opacity="0.35"/>
-                  <line x1="2"  y1="16" x2="9"  y2="16" stroke="hsl(38,91%,55%)" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
-                  <line x1="23" y1="16" x2="30" y2="16" stroke="hsl(38,91%,55%)" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
-                  <circle cx="16" cy="16" r="4.5" stroke="hsl(38,91%,55%)" strokeWidth="1.2" fill="none" opacity="0.5"/>
-                  <circle cx="16" cy="16" r="2"   fill="hsl(38,91%,55%)" opacity="0.3"/>
+                  <line x1="16" y1="2" x2="16" y2="9" stroke="hsl(38,91%,55%)" strokeWidth="1.5" strokeLinecap="round"/>
+                  <line x1="8"  y1="4" x2="13" y2="11" stroke="hsl(38,91%,55%)" strokeWidth="1.5" strokeLinecap="round" opacity="0.7"/>
+                  <line x1="24" y1="4" x2="19" y2="11" stroke="hsl(38,91%,55%)" strokeWidth="1.5" strokeLinecap="round" opacity="0.7"/>
+                  <line x1="2"  y1="16" x2="9"  y2="16" stroke="hsl(38,91%,55%)" strokeWidth="1.5" strokeLinecap="round" opacity="0.85"/>
+                  <line x1="23" y1="16" x2="30" y2="16" stroke="hsl(38,91%,55%)" strokeWidth="1.5" strokeLinecap="round" opacity="0.85"/>
+                  <circle cx="16" cy="16" r="4.5" stroke="hsl(38,91%,55%)" strokeWidth="1.2" fill="none"/>
+                  <circle cx="16" cy="16" r="2"   fill="hsl(38,91%,55%)" opacity="0.6"/>
                 </svg>
-                <span style={{fontFamily: "var(--font-display)", fontSize: "1rem", fontWeight: 400, letterSpacing: "0.06em", color: "#9ba3af", lineHeight: 1}}>LIGHT</span>
+                <span className="font-display text-[1rem] tracking-[0.06em] font-normal text-white leading-none">LIGHT</span>
               </div>
-            </div>
+              <span className="text-[10px] tracking-[0.3em] text-[#999] uppercase font-sans font-normal mt-0.5 self-center">
+                Lighting Solutions
+              </span>
+            </a>
 
             {/* Social icons – centered */}
             <div className="flex items-center gap-5">
